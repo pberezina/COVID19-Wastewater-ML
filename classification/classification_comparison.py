@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import click
 import pandas as pd
 from pathlib import Path
@@ -32,7 +34,9 @@ CLASSIFIERS = {
     ),
     "RBF_svc": dict(
         model=SVC(),
-        param_grid=dict(C=get_param_grid_space(exp=True), gamma=get_param_grid_space(exp=True)),
+        param_grid=dict(
+            C=get_param_grid_space(exp=True), gamma=get_param_grid_space(exp=True)
+        ),
         label="RBF SVC",
     ),
     "dtree": dict(
@@ -51,7 +55,7 @@ CLASSIFIERS = {
     default=str(Path(__file__).parent.parent / "encoded_cleaned.csv"),
     help="Path to data file csv.",
 )
-def main(data_file):
+def main(data_file: Path) -> None:
     df = load_data(data_file)
     x_cols = ["Confirmed Inmate Deaths", "Recovered Inmates"]
     y_col = "housing_factor"
@@ -67,7 +71,7 @@ def load_data(data_file: Path) -> pd.DataFrame:
     return df
 
 
-def tune_hyper_params(X, y):
+def tune_hyper_params(X: np.ndarray, y: np.ndarray) -> dict:
     scores = {}
     for key, classifier in CLASSIFIERS.items():
         gscv = grid_search_CV(classifier["model"], X, y, classifier["param_grid"])
@@ -75,7 +79,12 @@ def tune_hyper_params(X, y):
     return scores
 
 
-def set_x_cols(df, x_cols, y_col="housing_factor", groups=("Site")):
+def set_x_cols(
+    df: pd.DataFrame,
+    x_cols: list[str],
+    y_col: str = "housing_factor",
+    groups: list[str] | str = "Site",
+):
     df = df.dropna(subset=[*x_cols, y_col])
     X = df[x_cols]
     y = df[y_col]
@@ -100,14 +109,30 @@ def set_x_cols(df, x_cols, y_col="housing_factor", groups=("Site")):
     return X_train, X_test, X, y_train, y_test, y, xx0, xx1
 
 
-def score_model(X_train, X_test, X, y_train, y_test, model):
+def score_model(
+    X_train: np.ndarray,
+    X_test: np.ndarray,
+    X: np.ndarray,
+    y_train: np.ndarray,
+    y_test: np.ndarray,
+    model,
+) -> float:
     model.fit(X_train, y_train)
     score = model.score(X_test, y_test)
     print(score)
     return score
 
 
-def plot_clasifier(X, y, xx0, xx1, x_cols, score, model, model_type):
+def plot_clasifier(
+    X: np.ndarray,
+    y: np.ndarray,
+    xx0: np.ndarray,
+    xx1: np.ndarray,
+    x_cols: list[str],
+    score: float,
+    model,
+    model_type: str,
+) -> None:
 
     plt.figure()
 

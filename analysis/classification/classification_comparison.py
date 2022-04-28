@@ -15,8 +15,12 @@ from matplotlib.colors import ListedColormap
 
 from grid_search_verification import get_param_grid_space, grid_search_CV
 
+try:
+    from utils import load_data, DATA_PATH
+except ImportError:  # notebook being ran in child dir
+    import sys; sys.path.insert(0, '..')  # add parent to path
+    from utils import load_data, DATA_PATH
 
-DATA_DIR = Path(__file__).parent.parent / "encoded_cleaned.csv"
 CMAP_LIGHT = ListedColormap(["#FFAAAA", "#AAFFAA", "#AAAAFF"])
 CMAP_BOLD = ListedColormap(["#FF0000", "#00FF00", "#0000FF"])
 
@@ -52,7 +56,7 @@ CLASSIFIERS = {
     "-f",
     "--data_file",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    default=str(Path(__file__).parent.parent / "encoded_cleaned.csv"),
+    default=str(DATA_PATH),
     help="Path to data file csv.",
 )
 def main(data_file: Path) -> None:

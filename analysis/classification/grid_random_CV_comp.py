@@ -16,10 +16,11 @@ from sklearn.model_selection import HalvingGridSearchCV, HalvingRandomSearchCV
 
 try:
     from utils import DATA_PATH
-except ImportError:  # notebook being ran in child dir
+except ImportError:
+    import os
     import sys
 
-    sys.path.insert(0, "..")  # add parent to path
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # add parent to path
     from utils import DATA_PATH
 
 from models import CLASSIFIERS
@@ -31,7 +32,7 @@ param_grid = CLASSIFIERS["knn"]["param_grid"]
 rng = np.random.RandomState(0)
 
 # Utility function to report best scores
-def report(results, running_results, model_type, fit_time, n_top=3):
+def report(results, running_results, model_type, fit_time, n_top=30):
     running_results = []
     for i in range(1, n_top + 1):
         n_top_data = {}
@@ -83,19 +84,19 @@ def search_hyperparameters(X, y):
     running_results = []
 
     # run randomized search
-    n_iter_search = 15
-    random_search = RandomizedSearchCV(
-        clf, param_distributions=param_grid, n_iter=n_iter_search
-    )
+    # n_iter_search = 15
+    # random_search = RandomizedSearchCV(
+    #     clf, param_distributions=param_grid, n_iter=n_iter_search
+    # )
 
-    start = time()
-    random_search.fit(X, y)
-    end = time() - start
-    print(
-        "RandomizedSearchCV took %.2f seconds for %d candidates parameter settings."
-        % ((end), n_iter_search)
-    )
-    running_results.extend(report(random_search.cv_results_, running_results, "RandomizedSearchCV", end))
+    # start = time()
+    # random_search.fit(X, y)
+    # end = time() - start
+    # print(
+    #     "RandomizedSearchCV took %.2f seconds for %d candidates parameter settings."
+    #     % ((end), n_iter_search)
+    # )
+    # running_results.extend(report(random_search.cv_results_, running_results, "RandomizedSearchCV", end))
 
     # run grid search
     grid_search = GridSearchCV(clf, param_grid=param_grid)

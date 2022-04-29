@@ -6,3 +6,4 @@ seaborn
 statsmodels
 patsy
 jupyterlab
+yellowbrick

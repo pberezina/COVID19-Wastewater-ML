@@ -3,8 +3,14 @@ from __future__ import annotations
 import pandas as pd
 from pathlib import Path
 import numpy as np
+import scipy.stats as stats
+from scipy.special import inv_boxcox
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler
+from sklearn.base import (
+    TransformerMixin,
+    BaseEstimator
+)
 
 import os
 os.path.dirname(os.path.abspath(__file__))
@@ -18,17 +24,37 @@ def load_data(data_file: Path, date_cols=("Date",)) -> pd.DataFrame:
     return df
 
 
-def standardize(X):
-    return StandardScaler().fit_transform(X)
+class BoxCoxTransformer(BaseEstimator, TransformerMixin):
+    fitted_lambda: float
+
+    def fit(self, x: np.array) -> 'BoxCoxTransformer':
+
+        _, self.fitted_lambda = stats.boxcox(x)
+        return self
+
+    def transform(self, x: np.array) -> np.array:
+        # Note that for x of length = 1 stats.boxcox will raise error
+        return stats.boxcox(x, self.fitted_lambda)
+
+    def inverse_transform(self, X, copy=None):
+        copy = copy if copy is not None else self.copy
+        if copy:
+            X = X.copy()
+        return inv_boxcox(X, self.fitted_lambda)
 
 
-def inverse_transform(transformed_x, original_x):
-    return StandardScaler().fit(original_x).inverse_transform(transformed_x)
+
+def transform(X, transformer=RobustScaler):
+
+    return transformer().fit_transform(X)
+
+
+def inverse_transform(transformed_x, original_x, transformer=RobustScaler):
+    return transformer().fit(original_x).inverse_transform(transformed_x)
 
 
 def split_data(
     X: np.ndarray, y: np.ndarray,
-    standardize_x=True, standardize_y=True,
     **kwargs
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -40,22 +66,12 @@ def split_data(
         X data
     y : np.ndarray
         y data
-    standardize_x : bool
-        Standardize features by removing the mean and scaling to unit variance
-    standardize_y : bool
-        Standardize features by removing the mean and scaling to unit variance
 
     Returns
     -------
     tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
         X_train, X_test, y_train, y_test
     """
-    if standardize_x:
-        X = standardize(X)
-    #     X = StandardScaler().fit_transform(X)
-    if standardize_y:
-        y = standardize(y)
-    #     y = StandardScaler().fit_transform(y)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, random_state=1234, **kwargs

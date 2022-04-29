@@ -21,7 +21,7 @@ except ImportError:  # notebook being ran in child dir
     sys.path.insert(0, "..")  # add parent to path
     from utils import DATA_PATH
 
-from classifiers import CLASSIFIERS
+from models import CLASSIFIERS
 
 
 # grab a classifier

@@ -1,7 +1,9 @@
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
 
 
 def get_param_grid_space(
@@ -42,4 +44,14 @@ CLASSIFIERS = {
         param_grid=dict(max_depth=get_param_grid_space(1, 10, 9, int)),
         label="Decision Tree",
     ),
+    "rf": dict(
+        model=RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
+        param_grid=dict(max_depth=get_param_grid_space(1, 10, 19, int)),
+        label="Random Forest",
+        ),
+    "nb": dict(
+        model=GaussianNB(),
+        param_grid=dict(),
+        label="Gaussian Naive Bayes",
+        )
 }

@@ -1,3 +1,4 @@
+from curses import endwin
 from pathlib import Path
 
 import numpy as np
@@ -30,10 +31,20 @@ param_grid = CLASSIFIERS["knn"]["param_grid"]
 rng = np.random.RandomState(0)
 
 # Utility function to report best scores
-def report(results, n_top=3):
+def report(results, running_results, model_type, fit_time, n_top=3):
+    running_results = []
     for i in range(1, n_top + 1):
+        n_top_data = {}
         candidates = np.flatnonzero(results["rank_test_score"] == i)
         for candidate in candidates:
+            n_top_data["param"] = list(results["params"][candidate].keys())[0]
+            n_top_data["value"] = list(results["params"][candidate].values())[0]
+            n_top_data["mean_validation_score"] = results["mean_test_score"][candidate]
+            n_top_data["std_test_score"] = results["std_test_score"][candidate]
+            n_top_data["model_type"] = model_type
+            n_top_data["fit_time"] = fit_time
+
+            running_results.append(n_top_data)
             print("Model with rank: {0}".format(i))
             print(
                 "Mean validation score: {0:.3f} (std: {1:.3f})".format(
@@ -42,6 +53,7 @@ def report(results, n_top=3):
                 )
             )
             print("Parameters: {0}\n".format(results["params"][candidate]))
+    return running_results
 
 
 @click.command()
@@ -68,6 +80,8 @@ def load_data(data_file: Path) -> pd.DataFrame:
 
 
 def search_hyperparameters(X, y):
+    running_results = []
+
     # run randomized search
     n_iter_search = 15
     random_search = RandomizedSearchCV(
@@ -76,22 +90,24 @@ def search_hyperparameters(X, y):
 
     start = time()
     random_search.fit(X, y)
+    end = time() - start
     print(
         "RandomizedSearchCV took %.2f seconds for %d candidates parameter settings."
-        % ((time() - start), n_iter_search)
+        % ((end), n_iter_search)
     )
-    report(random_search.cv_results_)
+    running_results.extend(report(random_search.cv_results_, running_results, "RandomizedSearchCV", end))
 
     # run grid search
     grid_search = GridSearchCV(clf, param_grid=param_grid)
     start = time()
     grid_search.fit(X, y)
 
+    end = time() - start
     print(
         "GridSearchCV took %.2f seconds for %d candidate parameter settings."
-        % (time() - start, len(grid_search.cv_results_["params"]))
+        % (end, len(grid_search.cv_results_["params"]))
     )
-    report(grid_search.cv_results_)
+    running_results.extend(report(grid_search.cv_results_, running_results, "GridSearchCV", end))
 
     # run successive halving
     start = time()
@@ -99,11 +115,14 @@ def search_hyperparameters(X, y):
         estimator=clf, param_grid=param_grid, factor=2, random_state=rng
     )
     gsh.fit(X, y)
+    end = time() - start
     print(
         "HalvingGridSearchCV took %.2f seconds for %d candidate parameter settings."
-        % (time() - start, len(gsh.cv_results_["params"]))
+        % (end, len(gsh.cv_results_["params"]))
     )
-    report(gsh.cv_results_)
+    running_results.extend(report(gsh.cv_results_, running_results, "HalvingGridSearchCV", end))
+
+    pd.DataFrame(running_results).to_csv(DATA_PATH.parent / "analysis/CV_tune_comp.csv")
 
 
 if __name__ == "__main__":

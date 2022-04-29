@@ -7,16 +7,15 @@ import scipy.stats as stats
 from scipy.special import inv_boxcox
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import RobustScaler
-from sklearn.base import (
-    TransformerMixin,
-    BaseEstimator
-)
+from sklearn.base import TransformerMixin, BaseEstimator
 
 import os
+
 os.path.dirname(os.path.abspath(__file__))
 
-DATA_PATH = (Path(os.path.dirname(os.path.abspath(__file__))).parent
-             / "encoded_cleaned.csv")
+DATA_PATH = (
+    Path(os.path.dirname(os.path.abspath(__file__))).parent / "encoded_cleaned.csv"
+)
 
 
 def load_data(data_file: Path, date_cols=("Date",)) -> pd.DataFrame:
@@ -27,7 +26,7 @@ def load_data(data_file: Path, date_cols=("Date",)) -> pd.DataFrame:
 class BoxCoxTransformer(BaseEstimator, TransformerMixin):
     fitted_lambda: float
 
-    def fit(self, x: np.array) -> 'BoxCoxTransformer':
+    def fit(self, x: np.array) -> "BoxCoxTransformer":
 
         _, self.fitted_lambda = stats.boxcox(x)
         return self
@@ -43,7 +42,6 @@ class BoxCoxTransformer(BaseEstimator, TransformerMixin):
         return inv_boxcox(X, self.fitted_lambda)
 
 
-
 def transform(X, transformer=RobustScaler):
 
     return transformer().fit_transform(X)
@@ -54,8 +52,7 @@ def inverse_transform(transformed_x, original_x, transformer=RobustScaler):
 
 
 def split_data(
-    X: np.ndarray, y: np.ndarray,
-    **kwargs
+    X: np.ndarray, y: np.ndarray, **kwargs
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Split data into train and test sets
